@@ -15,7 +15,7 @@ const speechToTextService: SpeechToTextService = new GoogleSpeechToTextService(
 	process.env.GOOGLE_APPLICATION_CREDENTIALS as string
 );
 const storageService = new GoogleCloudStorageService(
-	process.env.STORAGE_SERVICE_NAME
+	process.env.STORAGE_SERVICE_NAME as string
 );
 const audioConverter = new AudioConverter(
 	config.audioConverter.inputFile,
