@@ -13,6 +13,10 @@ RUN npm install
 # Copy the rest of the application's files to the container
 COPY . .
 
+# Create folders to manipulate files
+RUN mkdir -p downloadedAudios
+RUN mkdir -p convertedAudios
+
 # Compile TypeScript files
 RUN npm run build
 
