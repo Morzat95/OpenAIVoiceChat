@@ -4,6 +4,10 @@ FROM node:14-alpine
 # Set the working directory in the container
 WORKDIR /app
 
+# Install ffmpeg
+RUN apt-get -y update
+RUN apt-get install -y ffmpeg
+
 # Copy the package.json and package-lock.json files to the container
 COPY package*.json ./
 
