@@ -5,8 +5,8 @@ FROM node:14-alpine
 WORKDIR /app
 
 # Install ffmpeg
-RUN apt-get -y update
-RUN apt-get install -y ffmpeg
+RUN apk update && \
+    apk add ffmpeg
 
 # Copy the package.json and package-lock.json files to the container
 COPY package*.json ./
