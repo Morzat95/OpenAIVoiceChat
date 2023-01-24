@@ -22,19 +22,12 @@ const storageService = new GoogleCloudStorageService(
 const openAiService = new OpenAiService(process.env.OPENAI_API_KEY as string);
 const bot = new TelegramBot(process.env.TELEGRAM_API_TOKEN, { polling: true });
 
-// TODO: pinnear mensaje
-// Matches "/about [whatever]"
-bot.onText(/\/about/, (msg: { chat: { id: any } }) => {
-	// 'msg' is the received Message from Telegram
-	// 'match' is the result of executing the regexp above on the text content
-	// of the message
-
-	const chatId = msg.chat.id;
-	// const resp = match[1]; // the captured "whatever"
-	const resp = `You can find more info about the bot in https://github.com/Morzat95/OpenAIVoiceChat`; // the captured "whatever"
-
-	// send back the matched "whatever" to the chat
-	bot.sendMessage(chatId, resp);
+bot.onText(/\/start/, async (msg: Message) => {
+	const firstBotMessage = await bot.sendMessage(
+		msg.chat.id,
+		`Hello! I am a Telegram bot designed to assist you with various tasks. My mission is to translate any of your voice messages so you can recieve a response from ChatGPT-3. You can find more info at https://github.com/Morzat95/OpenAIVoiceChat`
+	);
+	bot.pinChatMessage(msg.chat.id, firstBotMessage.message_id);
 });
 
 bot.on("voice", async (msg: Message) => {
