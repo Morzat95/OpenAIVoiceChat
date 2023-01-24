@@ -6,20 +6,18 @@ import { OpenAiService } from "./services/openai/OpenAIService";
 import { AudioDownloader } from "./services/downloader/AudioDownloader";
 import { config } from "./configuration/config";
 import * as dotenv from "dotenv";
+import { Message, Update } from "node-telegram-bot-api";
 const TelegramBot = require("node-telegram-bot-api");
 
 dotenv.config();
 
 const audioDownloader = new AudioDownloader();
+const audioConverter = new AudioConverter();
 const speechToTextService: SpeechToTextService = new GoogleSpeechToTextService(
 	process.env.GOOGLE_APPLICATION_CREDENTIALS as string
 );
 const storageService = new GoogleCloudStorageService(
 	process.env.STORAGE_SERVICE_NAME as string
-);
-const audioConverter = new AudioConverter(
-	config.audioConverter.inputFile,
-	config.audioConverter.outputFile
 );
 const openAiService = new OpenAiService(process.env.OPENAI_API_KEY as string);
 const bot = new TelegramBot(process.env.TELEGRAM_API_TOKEN, { polling: true });
@@ -39,22 +37,28 @@ bot.onText(/\/about/, (msg: { chat: { id: any } }) => {
 	bot.sendMessage(chatId, resp);
 });
 
-bot.on("voice", async (msg: { chat: { id: any }; voice: { file_id: any } }) => {
-	const chatId = msg.chat.id;
+bot.on("voice", async (msg: Message) => {
+	const chatId = String(msg.chat.id);
 
 	// Get the file_id of the audio message
-	const file_id = msg.voice.file_id;
+	const file_id = msg.voice?.file_id;
 
 	// Use the Telegram Bot API to get the file path for the audio message
 	const file_path = await bot.getFileLink(file_id);
 
 	// Download the audio file
-	const localFilePath = "./downloadedAudios/audio.oga";
-	// await downloadAudio(file_path, localFilePath);
-	await audioDownloader.download(file_path, config.audioDownloader.outputFile);
+	const downloadedAudioFile = replaceTemplateString(
+		config.audioDownloader.outputFile,
+		chatId
+	);
+	await audioDownloader.download(file_path, downloadedAudioFile);
 
 	// Convert the audio file to a format supported by Google Cloud Speech to Text Service
-	await audioConverter.convertToRaw();
+	const convertedAudioFile = replaceTemplateString(
+		config.audioConverter.outputFile,
+		chatId
+	);
+	await audioConverter.convertToRaw(downloadedAudioFile, convertedAudioFile);
 
 	// Upload the audio file to the Cloud Storage Service
 	// const [fileUrl] = await storageService.uploadFile(localFilePath, "audio.oga");
@@ -65,10 +69,10 @@ bot.on("voice", async (msg: { chat: { id: any }; voice: { file_id: any } }) => {
 	// 	"gs://my-test-bucket20230120/audio.oga"
 	// );
 	const transcription = await speechToTextService.transcribe(
-		config.speechToTextService.inputFile
+		convertedAudioFile
 	);
 
-	bot.sendMessage(chatId, `Me dijiste: ${transcription}`);
+	bot.sendMessage(chatId, `You told me: ${transcription}`);
 
 	// // Translate the transcription to the desired language
 	// const translation = await translateText(transcription, 'es');
@@ -79,3 +83,7 @@ bot.on("voice", async (msg: { chat: { id: any }; voice: { file_id: any } }) => {
 	// Send the response to the chat
 	bot.sendMessage(chatId, response);
 });
+
+function replaceTemplateString(template: string, chatId: string) {
+	return template.replace("{{chatId}}", chatId);
+}

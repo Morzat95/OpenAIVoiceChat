@@ -1,25 +1,20 @@
 const ffmpeg = require("fluent-ffmpeg");
 
 export class AudioConverter {
-	private inputFile: string;
-	private outputFile: string;
-
-	constructor(inputFile: string, outputFile: string) {
-		this.inputFile = inputFile;
-		this.outputFile = outputFile;
-	}
-
-	public async convertToRaw(): Promise<void> {
+	public async convertToRaw(
+		inputFile: string,
+		outputFile: string
+	): Promise<void> {
 		return new Promise((resolve) => {
 			ffmpeg()
-				.input(this.inputFile)
+				.input(inputFile)
 				.outputFormat("s16le")
 				.audioCodec("pcm_s16le")
 				.audioFrequency(16000)
 				.on("end", () => {
 					resolve();
 				})
-				.save(this.outputFile);
+				.save(outputFile);
 		});
 	}
 }
