@@ -1,6 +1,6 @@
 # OpenAIVoiceChat
 
-This project uses GPT-3 to respond to voice messages sent by users in Telegram, converting the audio to text before sending it to the model for processing. The model's response is then sent back to the Telegram chat with the user.
+This project is a Telegram bot that uses GPT-3 to generate responses to user messages. It supports both voice and text inputs from users. For voice messages, the bot converts the audio to text before sending it to the GPT-3 model for processing. The model's response is then sent back to the Telegram chat with the user. For text inputs, the bot sends the message directly to the GPT-3 model for processing and then sends the response back to the user.
 
 ## Getting Started
 
