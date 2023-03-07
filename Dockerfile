@@ -1,6 +1,9 @@
 # Use an official Node.js runtime as the base image
 FROM node:14-alpine
 
+# Install Redis
+RUN apk add --update redis
+
 # Set the working directory in the container
 WORKDIR /app
 
@@ -27,5 +30,5 @@ RUN npm run build
 # Expose the application's port
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "start"]
+# Start Redis and the Node.js app
+CMD ["sh", "-c", "redis-server & npm start"]

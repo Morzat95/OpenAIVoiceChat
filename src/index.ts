@@ -6,7 +6,8 @@ import { OpenAiService } from "./services/openai/OpenAIService";
 import { AudioDownloader } from "./services/downloader/AudioDownloader";
 import { config } from "./configuration/config";
 import * as dotenv from "dotenv";
-import { Message, Update } from "node-telegram-bot-api";
+import { CallbackQuery, Message } from "node-telegram-bot-api";
+import Redis from "ioredis";
 const TelegramBot = require("node-telegram-bot-api");
 
 dotenv.config();
@@ -22,12 +23,42 @@ const storageService = new GoogleCloudStorageService(
 const openAiService = new OpenAiService(process.env.OPENAI_API_KEY as string);
 const bot = new TelegramBot(process.env.TELEGRAM_API_TOKEN, { polling: true });
 
+// Redis configuration
+const redisClient = new Redis({
+	port: parseInt(process.env.REDIS_PORT || "6379"), // set default port to 6379
+	host: process.env.REDIS_URL,
+	password: process.env.REDIS_PASSWORD,
+});
+
 bot.onText(/\/start/, async (msg: Message) => {
 	const firstBotMessage = await bot.sendMessage(
 		msg.chat.id,
-		`Hello! I am a Telegram bot designed to assist you with various tasks. My mission is to translate any of your voice messages so you can recieve a response from ChatGPT-3. You can find more info at https://github.com/Morzat95/OpenAIVoiceChat`
+		`Hello! I am a Telegram bot designed to assist you with various tasks. My mission is to translate any of your voice messages so you can recieve a response from ChatGPT-3. You can find more info at https://github.com/Morzat95/OpenAIVoiceChat\n\nYou can configure the language with the /language command`
 	);
 	bot.pinChatMessage(msg.chat.id, firstBotMessage.message_id);
+});
+
+bot.onText(/\/language/, (msg: Message) => {
+	bot.sendMessage(msg.chat.id, "Please select a language", {
+		reply_markup: {
+			inline_keyboard: config.languages,
+		},
+	});
+});
+
+bot.on("callback_query", (callbackQuery: CallbackQuery) => {
+	const languageCode = `${callbackQuery.data}`;
+	bot.answerCallbackQuery(callbackQuery.id).then(async () => {
+		await redisClient.set(
+			`user:${callbackQuery.from.id}:language`,
+			languageCode
+		);
+		const languageName = config.languages
+			.flatMap((languageGroup) => languageGroup)
+			.filter((language) => language.callback_data === languageCode)
+			.map((language) => language.text);
+		bot.sendMessage(callbackQuery.from.id, `You selected ${languageName}`);
+	});
 });
 
 bot.on("text", async (msg: Message) => {
@@ -76,8 +107,13 @@ bot.on("voice", async (msg: Message) => {
 	// const transcription = await speechToTextService.transcribe(
 	// 	"gs://my-test-bucket20230120/audio.oga"
 	// );
+	const languageCode =
+		(await redisClient.get(`user:${msg.from?.id}:language`)) ??
+		(process.env.defaultLanguage as string);
+
 	const transcription = await speechToTextService.transcribe(
-		convertedAudioFile
+		convertedAudioFile,
+		languageCode
 	);
 
 	bot.sendMessage(chatId, `You told me: ${transcription}`);

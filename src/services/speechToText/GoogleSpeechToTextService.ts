@@ -13,7 +13,7 @@ export class GoogleSpeechToTextService implements SpeechToTextService {
 		this.apiKey = apiKey;
 	}
 
-	async transcribe(audioFile: string): Promise<string> {
+	async transcribe(audioFile: string, languageCode: string): Promise<string> {
 		const audioBytes = fs.readFileSync(audioFile).toString("base64");
 
 		const audio = {
@@ -22,7 +22,7 @@ export class GoogleSpeechToTextService implements SpeechToTextService {
 		const config = {
 			encoding: "LINEAR16",
 			sampleRateHertz: 16000,
-			languageCode: process.env.language,
+			languageCode: languageCode,
 		};
 		const request = {
 			audio: audio,
