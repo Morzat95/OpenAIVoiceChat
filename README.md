@@ -45,6 +45,42 @@ OPENAI_API_KEY=your_openai_api_key
 npm start
 ```
 
+## Deploying to AWS
+
+To deploy this project to AWS, follow these steps:
+
+1. Connect to your instance using SSH. You can find the IP address of your instance in the AWS console.
+
+```
+ssh -i your-key.pem ubuntu@your-instance-ip
+```
+
+2. Navigate to the directory where your app is located.
+
+```
+cd /path/to/app
+```
+
+3. Pull the latest updates from your repository.
+
+```
+git pull origin main
+```
+
+4. Build the Docker image.
+
+```
+docker build -t openaivoicechat .
+```
+
+5. Run the Docker container (note that I'm using the Google Speech to Text Service but with a little bit of code you can change it to use other Speech to Text Service).
+
+```
+docker run -d -e GOOGLE_APPLICATION_CREDENTIALS=path_to_credentials_file -e apiKeyFile=your_speech_to_text_api_token -e defaultLanguage=en-US -e TELEGRAM_API_TOKEN=your_telegram_api_token -e OPENAI_API_KEY=your_openai_api_token -p 3000:3000 openaivoicechat
+```
+
+Your app should now be up and running on your AWS instance. You can access it by visiting your instance's IP address in your web browser.
+
 ## Built With
 
 - [Node.js](https://nodejs.org/)
