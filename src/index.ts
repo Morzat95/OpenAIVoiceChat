@@ -30,6 +30,21 @@ bot.onText(/\/start/, async (msg: Message) => {
 	bot.pinChatMessage(msg.chat.id, firstBotMessage.message_id);
 });
 
+bot.on("text", async (msg: Message) => {
+	// Get the text message sent by the user
+	const userInput = msg.text;
+
+	if (userInput !== undefined && !userInput.startsWith("/")) {
+		const chatId = String(msg.chat.id);
+
+		// Make the request to the OpenAI API
+		const response = await openAiService.generateText(userInput);
+
+		// Send the response to the chat
+		bot.sendMessage(chatId, response);
+	}
+});
+
 bot.on("voice", async (msg: Message) => {
 	const chatId = String(msg.chat.id);
 
