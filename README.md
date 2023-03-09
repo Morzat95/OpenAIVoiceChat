@@ -90,6 +90,7 @@ Your app should now be up and running on your AWS instance. You can access it by
 - [@google-cloud/storage](https://www.npmjs.com/package/@google-cloud/storage)
 - [fluent-ffmpeg](https://www.npmjs.com/package/fluent-ffmpeg)
 - [openai](https://www.npmjs.com/package/openai)
+- [Redis](https://redis.io/)
 
 ## Authors
 
