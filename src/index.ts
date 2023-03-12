@@ -1,6 +1,5 @@
 import { SpeechToTextService } from "./services/speechToText/SpeechToTextService";
 import { GoogleSpeechToTextService } from "./services/speechToText/GoogleSpeechToTextService";
-import { GoogleCloudStorageService } from "./services/storage/GoogleCloudStorageService";
 import { AudioConverter } from "./services/converter/AudioConverter";
 import { OpenAiService } from "./services/openai/OpenAIService";
 import { AudioDownloader } from "./services/downloader/AudioDownloader";
@@ -8,6 +7,7 @@ import { config } from "./configuration/config";
 import * as dotenv from "dotenv";
 import { CallbackQuery, Message } from "node-telegram-bot-api";
 import Redis from "ioredis";
+import * as fs from "fs";
 const TelegramBot = require("node-telegram-bot-api");
 
 dotenv.config();
@@ -16,9 +16,6 @@ const audioDownloader = new AudioDownloader();
 const audioConverter = new AudioConverter();
 const speechToTextService: SpeechToTextService = new GoogleSpeechToTextService(
 	process.env.GOOGLE_APPLICATION_CREDENTIALS as string
-);
-const storageService = new GoogleCloudStorageService(
-	process.env.STORAGE_SERVICE_NAME as string
 );
 const openAiService = new OpenAiService(process.env.OPENAI_API_KEY as string);
 const bot = new TelegramBot(process.env.TELEGRAM_API_TOKEN, { polling: true });
@@ -99,14 +96,7 @@ bot.on("voice", async (msg: Message) => {
 	);
 	await audioConverter.convertToRaw(downloadedAudioFile, convertedAudioFile);
 
-	// Upload the audio file to the Cloud Storage Service
-	// const [fileUrl] = await storageService.uploadFile(localFilePath, "audio.oga");
-
 	// Use the speech-to-text service to transcribe the audio message
-	// const transcription = await speechToTextService.transcribe(fileUrl);
-	// const transcription = await speechToTextService.transcribe(
-	// 	"gs://my-test-bucket20230120/audio.oga"
-	// );
 	const languageCode =
 		(await redisClient.get(`user:${msg.from?.id}:language`)) ??
 		(process.env.defaultLanguage as string);
@@ -118,8 +108,12 @@ bot.on("voice", async (msg: Message) => {
 
 	bot.sendMessage(chatId, `You told me: ${transcription}`);
 
-	// // Translate the transcription to the desired language
-	// const translation = await translateText(transcription, 'es');
+	// Delete the audio files no longer needed
+	[downloadedAudioFile, convertedAudioFile].forEach((file) =>
+		fs.unlink(file, (error) => {
+			if (error) console.error(error);
+		})
+	);
 
 	// Make the request to the OpenAI API
 	const response = await openAiService.generateText(transcription);
