@@ -1,4 +1,5 @@
 import { Configuration, OpenAIApi } from "openai";
+import { ChatMessage } from "../..";
 
 export class OpenAiService {
 	openai: any;
@@ -10,14 +11,12 @@ export class OpenAiService {
 		this.openai = new OpenAIApi(configuration);
 	}
 
-	async generateText(prompt: string) {
-		const response = await this.openai.createCompletion({
-			prompt: prompt,
-			model: "text-davinci-003",
-			temperature: 0,
+	async generateText(messages: ChatMessage[]): Promise<ChatMessage> {
+		const response = await this.openai.createChatCompletion({
+			messages: messages,
+			model: "gpt-3.5-turbo",
 			max_tokens: 300,
-			best_of: 3,
 		});
-		return response.data.choices[0].text;
+		return response.data.choices[0].message;
 	}
 }
